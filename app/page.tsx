@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import { PassportPhotoGenerator } from "@/components/passport-photo-generator";
 
-export const metadata = {
-  title: "PrintMate — Passport Photo Generator",
+export const metadata: Metadata = {
+  title: "Passport Photo Generator",
   description:
-    "Upload a photo, remove the background automatically with AI, and print a clean passport photo sheet. Download PNG or print directly.",
+    "Upload your photo, remove background with AI, and generate a compliant 4 x 6 in passport photo sheet ready to print or download.",
+  alternates: {
+    canonical: "/",
+  },
 };
 
 export default function Page() {
