@@ -1,5 +1,5 @@
 const swVersion = new URL(self.location.href).searchParams.get("v") || "dev";
-const CACHE_NAME = `printmate-${swVersion}`;
+const CACHE_NAME = `printsyte-${swVersion}`;
 const OFFLINE_URLS = ["/", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {

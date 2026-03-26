@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   SIZE_PRESETS,
   SHEET_PRESETS,
@@ -19,16 +18,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CustomColorPicker } from "@/components/ui/coloPicker";
+import { Crop } from "lucide-react";
 
 interface SheetSettingsProps {
   qty: number;
   sizePreset: SizePresetKey;
   sheetPreset: SheetPresetKey;
   showGuides: boolean;
+  bgColor: string;
   onQtyChange: (qty: number) => void;
   onSizePresetChange: (key: SizePresetKey) => void;
   onSheetPresetChange: (key: SheetPresetKey) => void;
   onShowGuidesToggle: () => void;
+  onBgColorChange: (color: string) => void;
+  onCropClick?: () => void;
+  canCrop?: boolean;
 }
 
 export function SheetSettings({
@@ -36,10 +41,14 @@ export function SheetSettings({
   sizePreset,
   sheetPreset,
   showGuides,
+  bgColor,
   onQtyChange,
   onSizePresetChange,
   onSheetPresetChange,
   onShowGuidesToggle,
+  onBgColorChange,
+  onCropClick,
+  canCrop,
 }: SheetSettingsProps) {
   return (
     <section className="rounded-lg border border-white/6 bg-white/2 p-6 space-y-5">
@@ -47,26 +56,37 @@ export function SheetSettings({
         Sheet Settings
       </h2>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-8 gap-4">
         {/* ── Quantity ── */}
         <ControlField label="Quantity">
           <Input
             id="qty"
             type="number"
-            min={MIN_QTY}
+            min={0}
             max={MAX_QTY}
-            value={qty}
-            onChange={(e) =>
-              onQtyChange(
-                clamp(parseInt(e.target.value, 10) || 3, MIN_QTY, MAX_QTY)
-              )
-            }
+            value={qty === 0 ? "" : qty}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "") {
+                onQtyChange(0);
+              } else {
+                const parsed = parseInt(val, 10);
+                if (!isNaN(parsed)) {
+                  onQtyChange(Math.min(parsed, MAX_QTY));
+                }
+              }
+            }}
+            onBlur={() => {
+              if (qty < MIN_QTY) {
+                onQtyChange(MIN_QTY);
+              }
+            }}
             className="h-10 w-full rounded-lg border border-white/8 bg-white/4 px-3 text-sm text-white focus-visible:border-white/20 focus-visible:ring-0"
           />
         </ControlField>
 
         {/* ── Passport size ── */}
-        <ControlField label="Passport Size">
+        <ControlField label="Passport Size" className="col-span-1 md:col-span-2">
           <Select
             value={sizePreset}
             onValueChange={(v) => onSizePresetChange(v as SizePresetKey)}
@@ -88,7 +108,7 @@ export function SheetSettings({
         </ControlField>
 
         {/* ── Sheet size ── */}
-        <ControlField label="Sheet Size">
+        <ControlField label="Sheet Size" className="col-span-1 md:col-span-2">
           <Select
             value={sheetPreset}
             onValueChange={(v) => onSheetPresetChange(v as SheetPresetKey)}
@@ -109,14 +129,21 @@ export function SheetSettings({
           </Select>
         </ControlField>
 
+
+        {/* ── Background Color ── */}
+        <ControlField label="Background Color" className="col-span-1 md:col-span-2">
+          <CustomColorPicker color={bgColor} onChange={onBgColorChange} />
+        </ControlField>
+
+
         {/* ── Cut guides ── */}
-        <ControlField label="Cut Guides">
+        <ControlField label="Cut Guides" className="col-span-1">
           <button
             id="showGuides"
             role="switch"
             aria-checked={showGuides}
             onClick={onShowGuidesToggle}
-            className={`h-10 w-full rounded-lg border transition-colors duration-200 flex items-center gap-3 px-3 text-sm ${
+            className={`h-10 w-full rounded-lg border transition-colors duration-200 flex items-center gap-2 px-2 text-sm ${
               showGuides
                 ? "border-white/20 bg-white/10 text-white font-medium"
                 : "border-white/8 bg-white/4 text-zinc-500 hover:border-white/14 hover:text-zinc-400"
@@ -131,6 +158,19 @@ export function SheetSettings({
             <span>{showGuides ? "Enabled" : "Disabled"}</span>
           </button>
         </ControlField>
+
+        {/* ── Mobile Crop Button ── */}
+        {canCrop && (
+          <ControlField label="Crop Photo" className="col-span-1 md:hidden">
+            <button
+              onClick={onCropClick}
+              className="h-10 w-full rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-500 font-medium transition-colors duration-200 flex items-center justify-center gap-2 text-sm hover:bg-amber-500/20"
+            >
+              <Crop className="w-4 h-4" />
+              <span>Crop</span>
+            </button>
+          </ControlField>
+        )}
       </div>
     </section>
   );
@@ -141,12 +181,14 @@ export function SheetSettings({
 function ControlField({
   label,
   children,
+  className,
 }: {
   label: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className={`flex flex-col gap-2 ${className || ""}`}>
       <label className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
         {label}
       </label>

@@ -58,7 +58,7 @@ export function UploadZone({
     <div
       role="button"
       tabIndex={0}
-      className={`group relative lg:col-span-1 rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer min-h-[220px] flex flex-col items-center justify-center gap-3 p-6 group ${
+      className={`group relative lg:col-span-1 rounded-lg border-2 border-dashed transition-all duration-200 cursor-pointer min-h-55 flex flex-col items-center justify-center gap-3 p-6 group ${
         isDragging
           ? "border-amber-600/50 bg-amber-500/8"
           : "border-amber-600/30 bg-amber-500/5 hover:border-amber-600/50 hover:bg-amber-500/8"
@@ -89,7 +89,7 @@ export function UploadZone({
             alt="Original preview"
             className="w-full max-h-40 object-contain rounded-lg"
           />
-          <p className="text-sm text-amber-500/70 text-center">
+          <p className="text-sm text-amber-500/70 text-center break-all">
             {uploadedFile?.name}
             <br />
             <span className="text-xs text-amber-500/50">Click to change</span>

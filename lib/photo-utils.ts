@@ -7,13 +7,13 @@ export const MAX_QTY = 20;
 export const MIN_QTY = 1;
 
 export const SIZE_PRESETS = {
-  "35x45": { label: "35 × 45 mm", widthMm: 35, heightMm: 45 },
-  "51x51": { label: "51 × 51 mm (US 2×2 in)", widthMm: 51, heightMm: 51 },
+  "35x45": { label: "31 × 35 mm (Normal Passport)", widthMm: 30.48, heightMm: 34.925 },
+  "51x51": { label: "51 × 51 mm (US Passport)", widthMm: 51, heightMm: 51 },
 } as const;
 
 export const SHEET_PRESETS = {
-  "4x6": { label: "4 × 6 in", widthIn: 6, heightIn: 4, preferredCols: 3 },
-  "5x7": { label: "5 × 7 in", widthIn: 7, heightIn: 5, preferredCols: null },
+  "4x6": { label: "4 × 6 in", widthIn: 4, heightIn: 6, preferredCols: 3 },
+  "7x5": { label: "7 × 5 in", widthIn: 7, heightIn: 5, preferredCols: null },
   a4: { label: "A4", widthMm: 210, heightMm: 297, preferredCols: null },
 } as const;
 

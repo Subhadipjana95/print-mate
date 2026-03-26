@@ -1,14 +1,14 @@
-# PrintMate
+# PrintSyte
 
 > Professional passport photos in seconds — background removed automatically, laid out on a print-ready sheet.
 
-![PrintMate UI](./public/og-image.png)
+![PrintSyte UI](./public/og-image.png)
 
 ---
 
 ## What it does
 
-PrintMate takes a regular portrait photo, strips the background via the **remove.bg API**, and tiles the result onto a print-ready sheet at true **300 DPI**. The generated sheet can be downloaded as a PNG, copied to the clipboard, or sent straight to the printer — all in the browser, no backend required.
+PrintSyte takes a regular portrait photo, strips the background via the **remove.bg API**, and tiles the result onto a print-ready sheet at true **300 DPI**. The generated sheet can be downloaded as a PNG, copied to the clipboard, or sent straight to the printer — all in the browser, no backend required.
 
 ---
 
@@ -46,7 +46,7 @@ PrintMate takes a regular portrait photo, strips the background via the **remove
 ## Project Structure
 
 ```
-print-mate/
+print-syte/
 ├── app/
 │   ├── globals.css          # Design tokens + global utility classes
 │   ├── layout.tsx           # Root layout (dark theme, Geist font)
@@ -76,8 +76,8 @@ print-mate/
 ### 1. Clone & install
 
 ```bash
-git clone https://github.com/your-username/print-mate.git
-cd print-mate
+git clone https://github.com/your-username/print-syte.git
+cd print-syte
 npm install
 ```
 

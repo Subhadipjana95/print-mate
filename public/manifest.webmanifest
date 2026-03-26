@@ -1,6 +1,6 @@
 {
-  "name": "PrintMate",
-  "short_name": "PrintMate",
+  "name": "PrintSyte",
+  "short_name": "PrintSyte",
   "description": "Passport photo generator with background removal and print-ready sheets.",
   "start_url": "/",
   "scope": "/",

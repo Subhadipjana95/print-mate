@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Sparkles, CheckCircle, AlertCircle, Info } from "lucide-react";
+import { Loader2, Sparkles, CheckCircle, AlertCircle, Info, Crop } from "lucide-react";
 
 import {
   SIZE_PRESETS,
@@ -27,6 +27,7 @@ import { AppFooter } from "@/components/photo/app-footer";
 import { HeroSection } from "@/components/photo/hero-section";
 import { UploadZone } from "@/components/photo/upload-zone";
 import { PreviewCard } from "@/components/photo/preview-card";
+import { ImageCropModal } from "@/components/photo/image-crop-modal";
 import { SheetSettings } from "@/components/photo/sheet-settings";
 import { SheetPreview } from "@/components/photo/sheet-preview";
 
@@ -40,14 +41,19 @@ export function PassportPhotoGenerator() {
   // ── Photo state ────────────────────────────────────────────────────────────
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [originalUrl, setOriginalUrl] = useState("");
-  const [processedUrl, setProcessedUrl] = useState("");
+  const [baseProcessedUrl, setBaseProcessedUrl] = useState(""); // The unaltered remove.bg result
+  const [processedUrl, setProcessedUrl] = useState(""); // The currently used result (possibly cropped)
   const [processedImage, setProcessedImage] = useState<HTMLImageElement | null>(null);
+
+  // ── Crop state ─────────────────────────────────────────────────────────────
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
 
   // ── Sheet settings ─────────────────────────────────────────────────────────
   const [qty, setQty] = useState(3);
   const [sizePreset, setSizePreset] = useState<SizePresetKey>("35x45");
   const [sheetPreset, setSheetPreset] = useState<SheetPresetKey>("4x6");
   const [showGuides, setShowGuides] = useState(true);
+  const [bgColor, setBgColor] = useState("#ffffff");
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [isLoading, setIsLoading] = useState(false);
@@ -105,16 +111,18 @@ export function PassportPhotoGenerator() {
       canvas.width = sheetWidth;
       canvas.height = sheetHeight;
 
-      const edgePadding = Math.max(10, Math.round(sheetWidth * 0.02));
-      const availableWidth = sheetWidth - edgePadding * 2;
-      const availableHeight = sheetHeight - edgePadding * 2;
+      // Establish edge padding to be exactly half the photo spacing.
+      // E.g., if there are 3 columns, there are 2 internal gaps and 2 edge margins (each 0.5 gap), totaling 3 gaps.
+      let baseGap = Math.max(12, Math.round(sheetWidth / 50));
+      const availableWidth = sheetWidth - baseGap;
+      const availableHeight = sheetHeight - baseGap;
       const targetAspect = selectedSize.widthPx / selectedSize.heightPx;
 
-      let gap = Math.max(8, Math.round(sheetWidth / 60));
       const prefCols = "preferredCols" in sheetPr ? sheetPr.preferredCols : null;
-      if (prefCols === 3) {
-        const maxGap = Math.floor((availableWidth - selectedSize.widthPx * 3) / 2);
-        gap = clamp(Math.min(gap, maxGap), 8, 80);
+      if (prefCols) {
+        // Ensure gap isn't artificially too big to fit preferred cols, accounting for prefCols gaps total
+        const maxGapForPref = Math.floor((sheetWidth - selectedSize.widthPx * prefCols) / prefCols);
+        baseGap = clamp(baseGap, 8, Math.max(8, maxGapForPref));
       }
 
       const layout = chooseWrapLayout(
@@ -123,9 +131,43 @@ export function PassportPhotoGenerator() {
         selectedSize.heightPx,
         availableWidth,
         availableHeight,
-        gap,
+        baseGap,
         prefCols as number | null
       );
+
+      // Determine the maximum possible rows and cols that can fit on the sheet to calculate the stable gapY and gapX
+      const maxPossibleRows = Math.floor(sheetHeight / (selectedSize.heightPx + baseGap));
+      const maxPossibleCols = Math.floor(sheetWidth / (selectedSize.widthPx + baseGap));
+
+      // Distribute leftover width based on the MAX possible cols, NOT the current cols.
+      // This ensures gapX is identical whether there is 1 col or 4 cols.
+      const totalMaxPhotoWidth = maxPossibleCols * selectedSize.widthPx;
+      const leftoverMaxWidth = sheetWidth - totalMaxPhotoWidth;
+      let gapX = baseGap;
+      if (maxPossibleCols > 0) {
+        // distribute remaining horizontal space, divided by maxPossibleCols instead of maxPossibleCols + 1
+        // to leave exactly half a gap for the left and right edges.
+        const maxGapX = Math.round(sheetWidth * 0.08); 
+        gapX = clamp(Math.floor(leftoverMaxWidth / maxPossibleCols), baseGap, maxGapX);
+      }
+      
+      // Calculate total width of the *entire grid* if it was full to find the correct origin offsetX
+      const fullGridWidth = totalMaxPhotoWidth + (maxPossibleCols - 1) * gapX;
+      const offsetX = Math.floor((sheetWidth - fullGridWidth) / 2);
+
+      // Distribute leftover height based on the MAX possible rows, NOT the current rows.
+      // This ensures gapY is identical whether there is 1 row or 4 rows.
+      const totalMaxPhotoHeight = maxPossibleRows * selectedSize.heightPx;
+      const leftoverMaxHeight = sheetHeight - totalMaxPhotoHeight;
+      let gapY = baseGap;
+      if (maxPossibleRows > 0) {
+        const maxGapY = Math.round(sheetHeight * 0.08);
+        gapY = clamp(Math.floor(leftoverMaxHeight / maxPossibleRows), baseGap, maxGapY);
+      }
+      
+      // Calculate total height of the *entire grid* if it was full to find the correct origin offsetY
+      const fullGridHeight = totalMaxPhotoHeight + (maxPossibleRows - 1) * gapY;
+      const offsetY = Math.floor((sheetHeight - fullGridHeight) / 2);
 
       // Draw white background + border
       ctx.fillStyle = "#ffffff";
@@ -146,8 +188,12 @@ export function PassportPhotoGenerator() {
       for (let i = 0; i < quantity; i++) {
         const col = i % layout.cols;
         const row = Math.floor(i / layout.cols);
-        const x = Math.round(edgePadding + col * (selectedSize.widthPx + gap));
-        const y = Math.round(edgePadding + row * (selectedSize.heightPx + gap));
+        const x = Math.round(offsetX + col * (selectedSize.widthPx + gapX));
+        const y = Math.round(offsetY + row * (selectedSize.heightPx + gapY));
+
+        // Draw background color for the individual photo
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(x, y, selectedSize.widthPx, selectedSize.heightPx);
 
         ctx.drawImage(
           imgEl,
@@ -162,13 +208,17 @@ export function PassportPhotoGenerator() {
         }
       }
 
+      const isWarning = quantity === 0;
+
       setIsGenerated(true);
       setStatus({
-        message: `Generated ${quantity} photo${quantity > 1 ? "s" : ""} at ${selectedSize.label} on ${sheetPr.label}.`,
-        type: "success",
+        message: isWarning 
+          ? "No photos generated. Please increase the quantity to at least 1." 
+          : `Generated ${quantity} photo${quantity > 1 ? "s" : ""} at ${selectedSize.label} on ${sheetPr.label}.`,
+        type: isWarning ? "error" : "success",
       });
     },
-    [sizePreset, sheetPreset, showGuides]
+    [sizePreset, sheetPreset, showGuides, bgColor]
   );
 
   // Re-render when controls change (after first generation)
@@ -179,9 +229,28 @@ export function PassportPhotoGenerator() {
       setStatus({ message: err.message ?? "Unable to regenerate.", type: "error" });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qty, sizePreset, sheetPreset, showGuides]);
+  }, [qty, sizePreset, sheetPreset, showGuides, bgColor]);
 
   // ── Process & generate ─────────────────────────────────────────────────────
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    try {
+      const newUrl = URL.createObjectURL(croppedBlob);
+      const imgEl = await loadImageFromUrl(newUrl);
+      if (processedUrl && processedUrl !== baseProcessedUrl) {
+        URL.revokeObjectURL(processedUrl); // Cleanup old cropped URL
+      }
+      setProcessedUrl(newUrl);
+      setProcessedImage(imgEl);
+      await renderSheet(imgEl, qty);
+      setStatus({ message: "Crop applied successfully.", type: "success" });
+    } catch (err) {
+      setStatus({
+        message: err instanceof Error ? err.message : "Failed to load cropped image.",
+        type: "error",
+      });
+    }
+  };
 
   const processAndGenerate = async () => {
     if (!uploadedFile) {
@@ -196,8 +265,13 @@ export function PassportPhotoGenerator() {
     try {
       const resultBlob = await removeBackground(uploadedFile, apiKey);
       if (processedUrl) URL.revokeObjectURL(processedUrl);
+      if (baseProcessedUrl && baseProcessedUrl !== processedUrl) {
+        URL.revokeObjectURL(baseProcessedUrl);
+      }
       const newUrl = URL.createObjectURL(resultBlob);
       const imgEl = await loadImageFromUrl(newUrl);
+      
+      setBaseProcessedUrl(newUrl);
       setProcessedUrl(newUrl);
       setProcessedImage(imgEl);
       await renderSheet(imgEl, qty);
@@ -368,18 +442,35 @@ export function PassportPhotoGenerator() {
             url={processedUrl}
             placeholder="Generate to preview"
             transparent={true}
+            actionLabel="Crop"
+            actionIcon={<Crop className="w-3 h-3" />}
+            onAction={() => setIsCropModalOpen(true)}
           />
         </div>
+
+        {baseProcessedUrl && (
+          <ImageCropModal
+            open={isCropModalOpen}
+            onOpenChange={setIsCropModalOpen}
+            imageUrl={baseProcessedUrl}
+            targetAspect={SIZE_PRESETS[sizePreset].widthMm / SIZE_PRESETS[sizePreset].heightMm}
+            onCropComplete={handleCropComplete}
+          />
+        )}
 
         <SheetSettings
           qty={qty}
           sizePreset={sizePreset}
           sheetPreset={sheetPreset}
           showGuides={showGuides}
+          bgColor={bgColor}
           onQtyChange={setQty}
           onSizePresetChange={setSizePreset}
           onSheetPresetChange={setSheetPreset}
           onShowGuidesToggle={() => setShowGuides((p) => !p)}
+          onBgColorChange={setBgColor}
+          onCropClick={() => setIsCropModalOpen(true)}
+          canCrop={!!baseProcessedUrl}
         />
 
         {/* Generate button */}

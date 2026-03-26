@@ -1,8 +1,13 @@
+import { Crop } from "lucide-react";
+
 interface PreviewCardProps {
   title: string;
   url: string;
   placeholder: string;
   transparent: boolean;
+  onAction?: () => void;
+  actionLabel?: string;
+  actionIcon?: React.ReactNode;
 }
 
 export function PreviewCard({
@@ -10,12 +15,26 @@ export function PreviewCard({
   url,
   placeholder,
   transparent,
+  onAction,
+  actionLabel,
+  actionIcon,
 }: PreviewCardProps) {
   return (
-    <div className="lg:col-span-1 rounded-lg border border-white/6 bg-white/2 p-4 flex flex-col gap-3 min-h-[220px]">
-      <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
-        {title}
-      </p>
+    <div className="lg:col-span-1 rounded-lg border border-white/6 bg-white/2 p-4 flex flex-col gap-3 min-h-55">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+          {title}
+        </p>
+        {url && onAction && (
+          <button
+            onClick={onAction}
+            className="hidden md:flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded-md transition-colors"
+          >
+            {actionIcon}
+            {actionLabel}
+          </button>
+        )}
+      </div>
       <div
         className={`flex-1 rounded-sm flex items-center justify-center overflow-hidden ${
           transparent ? "transparent-checker" : "bg-white/3"
