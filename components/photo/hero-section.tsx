@@ -8,12 +8,8 @@ export function HeroSection() {
         <BorderBeam
           size={40}
           initialOffset={20}
+          duration={4}
           className="from-transparent via-amber-500 to-transparent"
-          transition={{
-            type: "spring",
-            stiffness: 10,
-            damping: 60,
-          }}
         />
         <Sparkles className="h-3 w-3" />
         Powered by remove.bg
