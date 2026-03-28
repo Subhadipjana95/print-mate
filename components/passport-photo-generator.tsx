@@ -258,7 +258,7 @@ export function PassportPhotoGenerator() {
       return;
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_REMOVE_BG_API_KEY ?? "";
+    const apiKey = process.env.REMOVE_BG_API_KEY ?? "";
     setStatus({ message: "", type: "idle" });
     setIsLoading(true);
 

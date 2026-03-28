@@ -86,7 +86,7 @@ npm install
 Create a `.env.local` file in the project root:
 
 ```env
-NEXT_PUBLIC_REMOVE_BG_API_KEY=your_api_key_here
+REMOVE_BG_API_KEY=your_api_key_here
 ```
 
 Get a free API key at [remove.bg/api](https://www.remove.bg/api) — the free tier includes 50 API calls/month.
@@ -145,7 +145,7 @@ HTML Canvas (300 DPI)  ──►  Tiled passport sheet
 
 | Variable | Required | Description |
 |---|---|---|
-| `NEXT_PUBLIC_REMOVE_BG_API_KEY` | ✅ | Your [remove.bg](https://www.remove.bg/api) API key |
+| `REMOVE_BG_API_KEY` | ✅ | Your [remove.bg](https://www.remove.bg/api) API key |
 
 ---
 
